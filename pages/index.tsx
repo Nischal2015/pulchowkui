@@ -12,10 +12,10 @@ import {
     Grid,
     Container,
     MenuItem,
-    CircularProgress,
 } from "@mui/material";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import axios from "axios";
-import { NormalCssProperties } from "@mui/material/styles/createTypography";
+import Image from "next/image";
 import styles from "../styles/Home.module.css";
 
 export interface ReturnDataProps {
@@ -33,6 +33,7 @@ const Home: NextPage = () => {
     const [batch, setBatch] = useState("");
     const [group, setGroup] = useState("");
     const [datas, setDatas] = useState<Array<ReturnDataProps>>([]);
+    const [dataPresent, setDataPresent] = useState(true);
     const programs = [
         {
             value: "BCT",
@@ -91,13 +92,25 @@ const Home: NextPage = () => {
         { value: "G", label: "G" },
         { value: "H", label: "h" },
     ];
-    const middleStyle = {
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-    } as NormalCssProperties;
 
+    const theme = createTheme({
+        components: {
+            // Name of the component ⚛️
+            MuiCard: {
+                styleOverrides: {
+                    root: {
+                        transition: "all 0.2s",
+                        boxShadow: "none",
+                        border: "1px solid rgb(80, 86, 93)",
+                        // The default props to change
+                        "&:hover": {
+                            transform: "scale(1.03, 1.03)",
+                        },
+                    },
+                },
+            },
+        },
+    });
     const mapMenuItems = (options: { label: string; value: string }[]) => {
         return options.map(option => (
             <MenuItem key={option.value} value={option.value}>
@@ -120,6 +133,11 @@ const Home: NextPage = () => {
                     }
                 );
                 setDatas(response.data);
+                if (!response.data.length) {
+                    setDataPresent(false);
+                } else {
+                    setDataPresent(true);
+                }
             } catch (error) {
                 console.log(error);
             } finally {
@@ -148,7 +166,7 @@ const Home: NextPage = () => {
                     spacing={{ xs: 1, sm: 2, md: 4 }}
                     onSubmit={formSubmitHandler}
                 >
-                    <Grid item xs={12} sm={6} md={4} lg={3}>
+                    <Grid item xs={12} sm={6} md={4} lg={4}>
                         <TextField
                             id="prog"
                             select
@@ -189,18 +207,44 @@ const Home: NextPage = () => {
                         </TextField>
                     </Grid>
 
-                    <Grid item xs={12} sm={6} md={4} lg={3}>
-                        <Button type="submit" variant="contained">
+                    <Grid item xs={12} sm={12} md={4} lg={2}>
+                        <Button type="submit" variant="contained" fullWidth>
                             Submit
                         </Button>
                     </Grid>
                 </Grid>
             </main>
 
-            {loading && <CircularProgress size={100} style={middleStyle} />}
-            <Grid container spacing={3}>
-                {!loading &&
-                    datas.map(data => {
+            {loading && (
+                <Image
+                    src="/searching.gif"
+                    style={{ margin: "0 auto" }}
+                    height={600}
+                    width={800}
+                    alt="Loading"
+                />
+            )}
+            {!dataPresent && (
+                <Image
+                    src="/search-not-found.gif"
+                    style={{ margin: "0 auto" }}
+                    height={386}
+                    width={718}
+                    alt="Not found"
+                />
+            )}
+            {!loading && Boolean(datas.length) && (
+                <Grid
+                    container
+                    rowSpacing={4}
+                    columnSpacing={3}
+                    className={styles.scroll}
+                    height="88vh"
+                    paddingRight={1}
+                    paddingBottom={4}
+                    marginTop={4}
+                >
+                    {datas.map(data => {
                         return (
                             <Grid
                                 item
@@ -210,38 +254,41 @@ const Home: NextPage = () => {
                                 lg={3}
                                 key={data.roll}
                             >
-                                <Card sx={{ width: 260 }}>
-                                    <CardActionArea>
-                                        <CardMedia
-                                            component="img"
-                                            height="140"
-                                            image="/ioe.jpg"
-                                            alt="Pulchowk Campus"
-                                            style={{ opacity: "0.7" }}
-                                        />
-                                        <CardContent>
-                                            <Typography
-                                                gutterBottom
-                                                component="div"
-                                            >
-                                                {`${data.firstname} ${data.middlename} ${data.lastname}`}
-                                            </Typography>
-                                            <Typography
-                                                variant="body2"
-                                                color="text.secondary"
-                                            >
-                                                Roll:{" "}
-                                                {data.batch +
-                                                    data.prog +
-                                                    data.roll}
-                                            </Typography>
-                                        </CardContent>
-                                    </CardActionArea>
-                                </Card>
+                                <ThemeProvider theme={theme}>
+                                    <Card sx={{ width: 260 }}>
+                                        <CardActionArea>
+                                            <CardMedia
+                                                component="img"
+                                                height="140"
+                                                image="/ioe.jpg"
+                                                alt="Pulchowk Campus"
+                                                style={{ opacity: "0.7" }}
+                                            />
+                                            <CardContent>
+                                                <Typography
+                                                    gutterBottom
+                                                    component="div"
+                                                >
+                                                    {`${data.firstname} ${data.middlename} ${data.lastname}`}
+                                                </Typography>
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                >
+                                                    Roll:{" "}
+                                                    {data.batch +
+                                                        data.prog +
+                                                        data.roll}
+                                                </Typography>
+                                            </CardContent>
+                                        </CardActionArea>
+                                    </Card>
+                                </ThemeProvider>
                             </Grid>
                         );
                     })}
-            </Grid>
+                </Grid>
+            )}
         </Container>
     );
 };
